@@ -1,60 +1,38 @@
-// Import directly from jsDelivr CDN
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.module.js";
-import { ARButton } from "https://cdn.jsdelivr.net/npm/three@0.154.0/examples/jsm/webxr/ARButton.js";
-import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.154.0/examples/jsm/controls/OrbitControls.js";
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
+import { ARButton } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/webxr/ARButton.js';
 
-let camera, scene, renderer, earth;
+// Scene, Camera, Renderer
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.xr.enabled = true;
+document.body.appendChild(renderer.domElement);
 
-init();
-animate();
+// AR button
+document.body.appendChild(ARButton.createButton(renderer));
 
-function init() {
-  scene = new THREE.Scene();
+// Light
+const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+scene.add(light);
 
-  camera = new THREE.PerspectiveCamera(
-    70,
-    window.innerWidth / window.innerHeight,
-    0.01,
-    20
-  );
+// Earth geometry + texture
+const geometry = new THREE.SphereGeometry(0.2, 32, 32);
+const texture = new THREE.TextureLoader().load('./assets/earth.jpg');
+const material = new THREE.MeshStandardMaterial({ map: texture });
+const earth = new THREE.Mesh(geometry, material);
+earth.position.set(0, 0, -1);
+scene.add(earth);
 
-  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.xr.enabled = true;
-  document.body.appendChild(renderer.domElement);
+// Animate Earth
+renderer.setAnimationLoop(() => {
+  earth.rotation.y += 0.005;
+  renderer.render(scene, camera);
+});
 
-  // Earth sphere
-  const textureLoader = new THREE.TextureLoader();
-  const earthTexture = textureLoader.load("assets/earth.jpg");
-
-  const geometry = new THREE.SphereGeometry(0.3, 32, 32);
-  const material = new THREE.MeshStandardMaterial({ map: earthTexture });
-  earth = new THREE.Mesh(geometry, material);
-  scene.add(earth);
-
-  // Light
-  const light = new THREE.DirectionalLight(0xffffff, 1);
-  light.position.set(1, 1, 1).normalize();
-  scene.add(light);
-
-  // AR button
-  document.body.appendChild(ARButton.createButton(renderer));
-
-  // Handle resizing
-  window.addEventListener("resize", onWindowResize);
-}
-
-function onWindowResize() {
+// Resize handling
+window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
-}
-
-function animate() {
-  renderer.setAnimationLoop(render);
-}
-
-function render() {
-  earth.rotation.y += 0.01; // rotate Earth
-  renderer.render(scene, camera);
-}
+});
