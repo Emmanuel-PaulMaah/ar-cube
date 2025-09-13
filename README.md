@@ -1,1 +1,1 @@
-# ar-cube
+# Earth-XR
