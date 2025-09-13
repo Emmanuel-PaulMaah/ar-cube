@@ -1,47 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8">
-    <title>Minimal WebXR AR Cube</title>
-    <style>
-      body { margin: 0; overflow: hidden; }
-      canvas { display: block; }
-    </style>
+    <title>AR Rotating Earth</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Three.js -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+    <!-- ARButton -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/webxr/ARButton.js"></script>
+    <!-- GLTF Loader (not used yet but handy later) -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/loaders/GLTFLoader.js"></script>
   </head>
-  <body>
-    <script type="module">
-      import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js';
-      import { ARButton } from 'https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/webxr/ARButton.js';
+  <body style="margin:0; overflow:hidden;">
+    <script>
+      // 1. Scene & Camera
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
 
-      // Renderer setup
+      // 2. Renderer with XR enabled
       const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.xr.enabled = true;
       document.body.appendChild(renderer.domElement);
 
-      // Scene + Camera
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera();
+      // 3. Add AR Button
+      document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: [] }));
 
-      // Light
-      const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+      // 4. Lighting (to make Earth texture visible)
+      const light = new THREE.DirectionalLight(0xffffff, 1);
+      light.position.set(1, 1, 1).normalize();
       scene.add(light);
 
-      // Cube
-      const geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-      const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-      const cube = new THREE.Mesh(geometry, material);
-      cube.position.set(0, 0, -0.5); // half a meter in front of you
-      scene.add(cube);
+      // 5. Load Earth sphere
+      const earthTexture = new THREE.TextureLoader().load('earth.jpg'); // place this file in repo root
+      const earthGeometry = new THREE.SphereGeometry(0.2, 32, 32); // radius = 0.2m (~20cm)
+      const earthMaterial = new THREE.MeshStandardMaterial({ map: earthTexture });
+      const earth = new THREE.Mesh(earthGeometry, earthMaterial);
+      earth.position.set(0, 0, -0.5); // half a meter in front
+      scene.add(earth);
 
-      // Add AR button
-      document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
-
-      // Render loop
-      renderer.setAnimationLoop(() => {
-        cube.rotation.y += 0.01;
-        renderer.render(scene, camera);
-      });
+      // 6. Animation loop
+      function animate() {
+        earth.rotation.y += 0.002; // slow rotation
+        renderer.setAnimationLoop(() => {
+          animate();
+          renderer.render(scene, camera);
+        });
+      }
+      animate();
     </script>
   </body>
 </html>
